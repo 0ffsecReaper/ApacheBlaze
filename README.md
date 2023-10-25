@@ -43,3 +43,12 @@ def index():
             'message': 'This game is currently unavailable due to internal maintenance.'
         }), 200
 ```
+* We can easily can see that easily we can add the path and can get the flag via seeing this code snip
+  ```
+  elif game == 'click_topia':
+        if request.headers.get('X-Forwarded-Host') == 'dev.apacheblaze.local':
+            return jsonify({
+                'message': f'{app.config["FLAG"]}'
+            }), 200
+  ```
+  
