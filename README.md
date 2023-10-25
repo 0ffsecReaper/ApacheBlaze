@@ -120,7 +120,7 @@ Host: <IP>:<PORT>
 ```
 Just above url encode it some how that the spaces and new lines will be encoded atleast and under that the asusual request will be sended like this :
 
-![]()
+![](https://github.com/0ffsecReaper/ApacheBlaze/blob/README.md/Screenshot%20from%202023-10-25%2021-03-28.png)
 and you will get the flag
 
 
