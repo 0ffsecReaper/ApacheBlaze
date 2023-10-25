@@ -51,4 +51,79 @@ def index():
                 'message': f'{app.config["FLAG"]}'
             }), 200
   ```
-  
+  ![](https://github.com/0ffsecReaper/ApacheBlaze/blob/README.md/HackTheBox-ApacheBlaze-burp-with-Forwarded-host.png)
+
+  ### We can easily see but that not that much easy we have to see something or explore more and after more analysis we see:
+  * In the Dockerfile We know that the game source code is located in the /app/ folder
+  * And it uses uwsgi to start the server with two ports 8081 and 8082.
+  * File httpd.conf:
+```
+ServerName _
+ServerTokens Prod
+ServerSignature Off
+
+Listen 8080
+Listen 1337
+
+ErrorLog "/usr/local/apache2/logs/error.log"
+CustomLog "/usr/local/apache2/logs/access.log" common
+
+LoadModule rewrite_module modules/mod_rewrite.so
+LoadModule proxy_module modules/mod_proxy.so
+LoadModule proxy_http_module modules/mod_proxy_http.so
+LoadModule proxy_balancer_module modules/mod_proxy_balancer.so
+LoadModule slotmem_shm_module modules/mod_slotmem_shm.so
+LoadModule lbmethod_byrequests_module modules/mod_lbmethod_byrequests.so
+
+<VirtualHost *:1337>
+
+    ServerName _
+
+    DocumentRoot /usr/local/apache2/htdocs
+
+    RewriteEngine on
+
+    RewriteRule "^/api/games/(.*)" "http://127.0.0.1:8080/?game=$1" [P]
+    ProxyPassReverse "/" "http://127.0.0.1:8080:/api/games/"
+
+</VirtualHost>
+
+<VirtualHost *:8080>
+
+    ServerName _
+
+    ProxyPass / balancer://mycluster/
+    ProxyPassReverse / balancer://mycluster/
+
+    <Proxy balancer://mycluster>
+        BalancerMember http://127.0.0.1:8081 route=127.0.0.1
+        BalancerMember http://127.0.0.1:8082 route=127.0.0.1
+        ProxySet stickysession=ROUTEID
+        ProxySet lbmethod=byrequests
+    </Proxy>
+
+</VirtualHost>
+```
+In Above code we can see that "^/api/games/(.*) we forwarded through port 8080 with the ip 127.0.0.1, then it Continue to go through the balancer module with ip 127.0.0.1 and will arrive at one of two ports, 8081 or 8082.
+
+Some after some more analysis Then I know that  the X-Forwarded-Host so we will pass in will carry 2 additional IPs as I mentioned above.
+hat uwsgi uses version 2.0.22 and apache has version httpd-2.4.55. Looking for some vulnerabilities I found:
+Apache HTTP Server via mod_proxy_uwsgi HTTP response smuggling
+With this vulnerability We will Make and Payload 
+```
+GET /api/games/click_topia HTTP/1.1
+Host: dev.apacheblaze.local
+
+GET /<ANY> HTTP/1.1
+Host: <IP>:<PORT>
+...
+```
+Just above url encode it some how that the spaces and new lines will be encoded atleast and under that the asusual request will be sended like this :
+
+![]()
+and you will get the flag
+
+
+
+Hence Pwned
+
